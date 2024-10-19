@@ -1,0 +1,61 @@
+// manifest.json
+{
+  "manifest_version": 2,
+  "name": "RSS Feed Reader",
+  "version": "1.0",
+  "description": "A simple RSS feed reader for Safari",
+  "permissions": [
+    "https://*/*"
+  ],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "browser_action": {
+    "default_popup": "popup.html"
+  }
+}
+
+// background.js
+chrome.browserAction.onClicked.addListener(function(tab) {
+  chrome.tabs.create({ url: 'popup.html' });
+});
+
+// popup.html
+<!DOCTYPE html>
+<html>
+<head>
+  <title>RSS Feed Reader</title>
+  <script src="popup.js"></script>
+</head>
+<body>
+  <h1>RSS Feed Reader</h1>
+  <input type="text" id="feedUrl" placeholder="Enter RSS feed URL">
+  <button id="fetchFeed">Fetch Feed</button>
+  <div id="feedContent"></div>
+</body>
+</html>
+
+// popup.js
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('fetchFeed').addEventListener('click', fetchRSSFeed);
+});
+
+function fetchRSSFeed() {
+  const feedUrl = document.getElementById('feedUrl').value;
+  fetch(feedUrl)
+    .then(response => response.text())
+    .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
+    .then(data => {
+      const items = data.querySelectorAll("item");
+      let html = '';
+      items.forEach(el => {
+        html += `
+          <h2>${el.querySelector("title").textContent}</h2>
+          <p>${el.querySelector("description").textContent}</p>
+          <a href="${el.querySelector("link").textContent}" target="_blank">Read more</a>
+        `;
+      });
+      document.getElementById('feedContent').innerHTML = html;
+    });
+}
